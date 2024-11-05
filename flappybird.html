@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flappy Bird Clone</title>
+    <style>
+      canvas {
+        background-color: white;
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <script>
+      // Get the canvas and context
+      var canvas = document.getElementById("gameCanvas");
+      var ctx = canvas.getContext("2d");
+
+      // Screen dimensions
+      var WIDTH = 400;
+      var HEIGHT = 600;
+
+      // Colors
+      var WHITE = "#FFFFFF";
+      var BLACK = "#000000";
+      var GREEN = "#00FF00";
+
+      // Bird properties
+      var bird_x = 50;
+      var bird_y = HEIGHT / 2;
+      var bird_radius = 20;
+      var bird_velocity = 0;
+      var gravity = 0.5;
+      var jump_height = -10;
+
+      // Pipe properties
+      var pipe_width = 70;
+      var pipe_gap = 200;
+      var pipe_velocity = 3;
+      var pipes = [];
+
+      // Scoring
+      var score = 0;
+
+      // Game state
+      var running = true;
+
+      // Add initial pipe
+      function create_pipe() {
+        var y = Math.floor(Math.random() * (HEIGHT - pipe_gap - 200)) + 100;
+        pipes.push({ x: WIDTH, y: y, scored: false });
+      }
+      create_pipe();
+
+      // Event handling
+      document.addEventListener("keydown", function (event) {
+        if (event.code === "Space") {
+          bird_velocity = jump_height;
+        }
+      });
+
+      // Main game loop
+      function gameLoop() {
+        if (!running) {
+          // Game over screen
+          ctx.fillStyle = BLACK;
+          ctx.font = "48px Arial";
+          ctx.fillText("Game Over!", WIDTH / 2 - 120, HEIGHT / 2 - 20);
+          ctx.font = "36px Arial";
+          ctx.fillText("Score: " + score, WIDTH / 2 - 60, HEIGHT / 2 + 40);
+          return;
+        }
+
+        // Clear the screen
+        ctx.fillStyle = WHITE;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+        // Bird physics
+        bird_velocity += gravity;
+        bird_y += bird_velocity;
+
+        // Move and draw pipes
+        ctx.fillStyle = GREEN;
+        for (var i = 0; i < pipes.length; i++) {
+          var pipe = pipes[i];
+          pipe.x -= pipe_velocity;
+
+          // Top pipe
+          ctx.fillRect(pipe.x, 0, pipe_width, pipe.y);
+          // Bottom pipe
+          ctx.fillRect(
+            pipe.x,
+            pipe.y + pipe_gap,
+            pipe_width,
+            HEIGHT - (pipe.y + pipe_gap)
+          );
+
+          // Collision detection
+          if (
+            bird_x + bird_radius > pipe.x &&
+            bird_x - bird_radius < pipe.x + pipe_width
+          ) {
+            if (
+              bird_y - bird_radius < pipe.y ||
+              bird_y + bird_radius > pipe.y + pipe_gap
+            ) {
+              running = false;
+            }
+          }
+
+          // Scoring
+          if (!pipe.scored && pipe.x + pipe_width < bird_x) {
+            score += 1;
+            pipe.scored = true;
+          }
+        }
+
+        // Remove off-screen pipes
+        if (pipes.length > 0 && pipes[0].x + pipe_width < 0) {
+          pipes.shift();
+        }
+
+        // Add new pipes
+        if (pipes[pipes.length - 1].x < WIDTH - 200) {
+          create_pipe();
+        }
+
+        // Draw bird
+        ctx.fillStyle = BLACK;
+        ctx.beginPath();
+        ctx.arc(bird_x, bird_y, bird_radius, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Check if bird hit the top or bottom
+        if (bird_y - bird_radius < 0 || bird_y + bird_radius > HEIGHT) {
+          running = false;
+        }
+
+        // Draw score
+        ctx.fillStyle = BLACK;
+        ctx.font = "36px Arial";
+        ctx.fillText("Score: " + score, 10, 40);
+
+        // Request the next frame
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game loop
+      requestAnimationFrame(gameLoop);
+    </script>
+  </body>
+</html>
